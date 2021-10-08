@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>9.0</LangVersion>
+        <LitGitIncludeProjectUrl>true</LitGitIncludeProjectUrl>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="LitGit" Version="0.2.0.47-alpha" PrivateAssets="all" />
+    </ItemGroup>
+
+</Project>
