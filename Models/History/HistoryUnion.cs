@@ -3,15 +3,19 @@ using System.Collections.Generic;
 
 namespace engenious.Content.Models.History
 {
+    /// <summary>
+    ///     A tree structure to collect history changes; to be able to undo and redo them.
+    /// </summary>
     public class HistoryUnion : IHistory
     {
-        public event EventHandler HistoryChanged;
-        public event EventHandler HistoryItemAdded;
+        private readonly List<IHistory> _histories;
 
         private bool _isWorking;
-        private readonly List<IHistory> _histories;
         private Stack<IHistory> _undo, _redo;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="HistoryUnion"/> class.
+        /// </summary>
         public HistoryUnion()
         {
             _histories = new List<IHistory>();
@@ -19,6 +23,13 @@ namespace engenious.Content.Models.History
             _redo = new Stack<IHistory>();
         }
 
+        /// <inheritdoc />
+        public event EventHandler? HistoryChanged;
+
+        /// <inheritdoc />
+        public event EventHandler? HistoryItemAdded;
+
+        /// <inheritdoc />
         public void Undo()
         {
             var item = _undo.Pop();
@@ -30,6 +41,7 @@ namespace engenious.Content.Models.History
             HistoryChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <inheritdoc />
         public void Redo()
         {
             var item = _redo.Pop();
@@ -42,17 +54,32 @@ namespace engenious.Content.Models.History
         }
 
 
+        /// <inheritdoc />
         public void Push(IHistoryItem item)
         {
             throw new NotSupportedException();
         }
 
+        /// <inheritdoc />
+        public bool CanUndo => _undo.Count > 0 && _undo.Peek().CanUndo;
+
+        /// <inheritdoc />
+        public bool CanRedo => _redo.Count > 0 && _redo.Peek().CanRedo;
+
+        /// <summary>
+        ///     Adds  a history change to this tree collection of history changes.
+        /// </summary>
+        /// <param name="history">The history change to append.</param>
         public void Add(IHistory history)
         {
             _histories.Add(history);
             history.HistoryItemAdded += HistoryOnHistoryItemAdded;
         }
 
+        /// <summary>
+        ///     Removes history change to this tree collection of history changes.
+        /// </summary>
+        /// <param name="history">The history change to remove.</param>
         public void Remove(IHistory history)
         {
             history.HistoryItemAdded -= HistoryOnHistoryItemAdded;
@@ -72,6 +99,7 @@ namespace engenious.Content.Models.History
                 if (item != remove)
                     tmp.Push(item);
             }
+
             stack = tmp;
         }
 
@@ -79,11 +107,8 @@ namespace engenious.Content.Models.History
         {
             if (_isWorking)
                 return;
-            var history = (IHistory) sender;
+            var history = (IHistory)sender;
             _undo.Push(history);
         }
-
-        public bool CanUndo => _undo.Count > 0 && _undo.Peek().CanUndo;
-        public bool CanRedo => _redo.Count > 0 && _redo.Peek().CanRedo;
     }
 }

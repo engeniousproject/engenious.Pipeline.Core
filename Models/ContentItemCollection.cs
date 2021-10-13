@@ -1,49 +1,52 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using engenious.ContentTool.Observer;
 
 namespace engenious.Content.Models
 {
+    /// <summary>
+    ///     An observable collection for content items.
+    /// </summary>
     public class ContentItemCollection : ObservableCollection<ContentItem>, INotifyPropertyValueChanged
     {
-        public event NotifyPropertyValueChangedHandler PropertyValueChanged;
+        /// <inheritdoc />
+        public event NotifyPropertyValueChangedHandler? PropertyValueChanged;
 
+        /// <inheritdoc />
         protected override void ClearItems()
         {
             foreach (var i in this)
-            {
                 i.PropertyValueChanged -= Item_OnPropertyValueChanged;
-            }
             base.ClearItems();
         }
 
+        /// <inheritdoc />
         protected override void InsertItem(int index, ContentItem item)
         {
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
             base.InsertItem(index, item);
-            if (item != null)
-                item.PropertyValueChanged += Item_OnPropertyValueChanged;
+            item.PropertyValueChanged += Item_OnPropertyValueChanged;
         }
 
+        /// <inheritdoc />
         protected override void RemoveItem(int index)
         {
             var oldItem = this[index];
             base.RemoveItem(index);
-            
+
             oldItem.PropertyValueChanged -= Item_OnPropertyValueChanged;
         }
 
+        /// <inheritdoc />
         protected override void SetItem(int index, ContentItem item)
         {
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
             var oldItem = this[index];
             base.SetItem(index, item);
             oldItem.PropertyValueChanged -= Item_OnPropertyValueChanged;
-            if (item != null)
-                item.PropertyValueChanged += Item_OnPropertyValueChanged;
+            item.PropertyValueChanged += Item_OnPropertyValueChanged;
         }
 
         private void Item_OnPropertyValueChanged(object sender, PropertyValueChangedEventArgs e)

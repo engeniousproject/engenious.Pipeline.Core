@@ -1,22 +1,35 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
 using System.ComponentModel;
 using System.IO;
 using System.Xml.Linq;
 
 namespace engenious.Content.Models
 {
+    /// <summary>
+    ///     Class for content folders for the content pipeline.
+    /// </summary>
     public class ContentFolder : ContentItem
     {
-        /// <summary>
-        /// Path of the content folder
-        /// </summary>
-        public override string FilePath
-        {
-            get => Path.Combine(Parent.FilePath, Name);
-        }
+        private ContentItemCollection _content;
 
         /// <summary>
-        /// The content of the folder
+        ///     Initializes a new instance of the <see cref="ContentFolder"/> class.
+        /// </summary>
+        /// <param name="name">Name of the element</param>
+        /// <param name="parent">Parent item</param>
+        public ContentFolder(string name, ContentItem? parent) : base(name, parent)
+        {
+            _content = new ContentItemCollection();
+            _content.CollectionChanged += OnCollectionChanged;
+            _content.PropertyValueChanged += OnPropertyChanged;
+        }
+
+        /// <inheritdoc />
+        public override string FilePath => Parent == null ? Name : Path.Combine(Parent.FilePath, Name);
+
+
+        /// <summary>
+        ///     Gets sets the content of this <see cref="ContentFolder"/>.
         /// </summary>
         [Browsable(false)]
         public ContentItemCollection Content
@@ -31,24 +44,12 @@ namespace engenious.Content.Models
             }
         }
 
-        private ContentItemCollection _content;
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="name">Name of the element</param>
-        /// <param name="parent">Parent item</param>
-        public ContentFolder(string name, ContentItem parent) : base(name, parent)
-        {
-            _content = new ();
-            _content.CollectionChanged += OnCollectionChanged;
-            _content.PropertyValueChanged += OnPropertyChanged;
-        }
-
+        /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
             SupressChangedEvent = true;
-            Name = element.Element("Name")?.Value;
+            Name = element.Element("Name")?.Value ??
+                   throw new ArgumentException($"{nameof(element)} has no \"Name\" tag.");
 
             if (!Directory.Exists(FilePath))
                 Error = ContentErrorType.NotFound;
@@ -58,17 +59,16 @@ namespace engenious.Content.Models
                 return this;
 
             foreach (var subElement in xElement.Elements())
-            {
                 if (subElement.Name == "ContentFile")
                     _content.Add(new ContentFile(string.Empty, this).Deserialize(subElement));
                 else if (subElement.Name == "ContentFolder")
                     _content.Add(new ContentFolder(string.Empty, this).Deserialize(subElement));
-            }
             SupressChangedEvent = false;
 
             return this;
         }
 
+        /// <inheritdoc />
         public override XElement Serialize()
         {
             var element = new XElement("ContentFolder");

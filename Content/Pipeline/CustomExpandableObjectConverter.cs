@@ -3,85 +3,102 @@ using System.ComponentModel;
 
 namespace engenious.Content.Pipeline
 {
+    /// <summary>
+    ///     An expandable <see cref="TypeConverter"/> for arbitrary properties. 
+    /// </summary>
     public class CustomExpandableObjectConverter : TypeConverter
     {
-        public override PropertyDescriptorCollection GetProperties(ITypeDescriptorContext context, object value, Attribute[] attributes)
+        /// <inheritdoc />
+        public override PropertyDescriptorCollection GetProperties(ITypeDescriptorContext context, object value,
+            Attribute[] attributes)
         {
             var props = TypeDescriptor.GetProperties(value, attributes);
             var ret = new PropertyDescriptor[props.Count];
-            for (int i = 0; i < props.Count; i++)
-            {
+            for (var i = 0; i < props.Count; i++)
                 ret[i] = new SafeTypeDescriptorWrapper(props[i]);
-            }
             return new PropertyDescriptorCollection(ret);
         }
 
+        /// <inheritdoc />
         public override bool GetPropertiesSupported(ITypeDescriptorContext context)
         {
             return true;
         }
     }
+
+    /// <summary>
+    ///     A safe wrapper for <see cref="PropertyDescriptor"/>.
+    /// </summary>
     public class SafeTypeDescriptorWrapper : PropertyDescriptor
     {
+        /// <summary>
+        ///     Occurs when an exception was thrown while trying to work on a property.
+        /// </summary>
         public static EventHandler? WorkaroundEvent;
         private readonly PropertyDescriptor _baseDescriptor;
-        public SafeTypeDescriptorWrapper(PropertyDescriptor baseDescriptor) : base(baseDescriptor)
+        
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SafeTypeDescriptorWrapper"/> class.
+        /// </summary>
+        /// <param name="baseDescriptor">The base <see cref="PropertyDescriptor"/> to wrap.</param>
+        public SafeTypeDescriptorWrapper(PropertyDescriptor baseDescriptor)
+            : base(baseDescriptor)
         {
             _baseDescriptor = baseDescriptor;
         }
 
+        /// <inheritdoc />
+        public override Type ComponentType => _baseDescriptor.ComponentType;
 
-        public override bool CanResetValue(object component)
+        /// <inheritdoc />
+        public override bool IsReadOnly => _baseDescriptor.IsReadOnly;
+
+        /// <inheritdoc />
+        public override Type PropertyType => _baseDescriptor.PropertyType;
+
+
+        /// <inheritdoc />
+        public override bool CanResetValue(object? component)
         {
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             return component != null && _baseDescriptor.CanResetValue(component);
         }
 
+        /// <inheritdoc />
         public override object? GetValue(object? component)
         {
-            // actually can be false not what ReSharper thinks
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             return component == null ? null : _baseDescriptor.GetValue(component);
         }
 
-        public override void ResetValue(object component)
+        /// <inheritdoc />
+        public override void ResetValue(object? component)
         {
-            // actually can be false not what ReSharper thinks
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (component == null)
-                // ReSharper disable once HeuristicUnreachableCode
                 return;
 
             _baseDescriptor.ResetValue(component);
-
         }
 
-        public override void SetValue(object component, object value)
+        /// <inheritdoc />
+        public override void SetValue(object? component, object value)
         {
-            // actually can be false not what ReSharper thinks
-            // ReSharper disable once ConditionIsAlwaysTrueOrFalse
             if (component == null)
                 return;
 
             _baseDescriptor.SetValue(component, value);
         }
 
+        /// <inheritdoc />
         public override bool ShouldSerializeValue(object component)
         {
             try
             {
-                // actually can be false not what ReSharper thinks
-                // ReSharper disable once ConditionIsAlwaysTrueOrFalse
                 return _baseDescriptor.ShouldSerializeValue(component);
-            }catch(ArgumentNullException)
+            }
+            catch (ArgumentNullException)
             {
-                WorkaroundEvent?.Invoke(this,EventArgs.Empty);
+                WorkaroundEvent?.Invoke(this, EventArgs.Empty);
                 return false;
             }
         }
-
-        public override Type ComponentType => _baseDescriptor.ComponentType;
-        public override bool IsReadOnly  => _baseDescriptor.IsReadOnly;
-        public override Type PropertyType => _baseDescriptor.PropertyType;
     }
 }

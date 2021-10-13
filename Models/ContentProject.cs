@@ -9,27 +9,66 @@ using engenious.ContentTool.Observer;
 
 namespace engenious.Content.Models
 {
+    /// <summary>
+    ///     Top level project for the content pipeline.
+    /// </summary>
     public class ContentProject : ContentFolder
     {
+        private readonly History.History _internalHistory;
+
+        private readonly bool _readOnly;
+
+        private string _configuration;
+
+        private string _outputDirectory;
+
         /// <summary>
-        /// The path of the ContentFolder
+        ///     Initializes a new instance of the <see cref="ContentProject"/> class.
+        /// </summary>
+        /// <param name="name">Name of the project</param>
+        /// <param name="contentProjectPath">Path of the actual project file</param>
+        /// <param name="folderPath">Path of the project directory</param>
+        /// <param name="readOnly">Whether the project is readonly or not.</param>
+        public ContentProject(string name, string contentProjectPath, string folderPath, bool readOnly = false)
+            : base(name, null)
+        {
+            ContentProjectPath = contentProjectPath;
+            FilePath = folderPath;
+
+            _readOnly = readOnly;
+            _internalHistory = new History.History();
+            History = new HistoryUnion();
+            History.Add(_internalHistory);
+
+            _configuration = "Debug";
+            _outputDirectory = "bin/{Configuration}";
+
+
+            //ContentItemChanged += (a, b) => HasUnsavedChanges = true;
+            PropertyValueChanged += OnPropertyChangedT;
+            CollectionChanged += OnCollectionChangedT;
+        }
+
+        /// <summary>
+        ///     Gets the path of the ContentFolder
         /// </summary>
         public override string FilePath { get; }
 
         /// <summary>
-        /// The parent item - always null for projects
+        ///     Gets the parent item - always null for projects
         /// </summary>
-        public override ContentItem Parent => null;
+        public override ContentItem? Parent => null;
 
         /// <summary>
-        /// The path to the actual project file
+        ///     Gets the path to the actual project file
         /// </summary>
         public string ContentProjectPath { get; set; }
 
+        /// <inheritdoc />
         public override string RelativePath => string.Empty;
 
         /// <summary>
-        /// Directory to save the output to
+        ///     Gets or sets the directory to save the output to.
         /// </summary>
         public string OutputDirectory
         {
@@ -44,14 +83,13 @@ namespace engenious.Content.Models
         }
 
         /// <summary>
-        /// Directory to save the output to
+        ///     Gets the configured directory to save the output to.
         /// </summary>
-        public string ConfiguredOutputDirectory => string.Format(OutputDirectory.Replace("{Configuration}", "{0}"), Project.Configuration);
-
-        private string _outputDirectory;
+        public string ConfiguredOutputDirectory =>
+            string.Format(OutputDirectory.Replace("{Configuration}", "{0}"), Project.Configuration);
 
         /// <summary>
-        /// The configuration of the project
+        ///     Gets or sets the configuration of the project.
         /// </summary>
         public string Configuration
         {
@@ -65,68 +103,30 @@ namespace engenious.Content.Models
             }
         }
 
-        private string _configuration;
-
         /// <summary>
-        /// References of the project
+        ///     Gets the references of the project.
         /// </summary>
-        public List<string> References
-        {
-            get => _references;
-            set
-            {
-                if (value == _references) return;
-                var old = _references;
-                _references = value;
-                if (old == null) SupressChangedEvent = true;
-                OnPropertyChanged(old, value);
-                SupressChangedEvent = false;
-            }
-        }
-
-        private List<string> _references;
+        public List<string> References { get; } = new();
 
         /// <summary>
-        /// Tells if the project has unsaved changes
+        ///     Gets a value indicating whether the project has unsaved changes
         /// </summary>
         [Browsable(false)]
         public bool HasUnsavedChanges { get; private set; }
-        
-        [Browsable(false)]
-        public HistoryUnion History { get; }
-
-        private readonly History.History _internalHistory;
-
-        private readonly bool _readOnly;
 
         /// <summary>
-        /// Constructor
+        ///     Gets the history of changes for this project.
         /// </summary>
-        /// <param name="name">Name of the project</param>
-        /// <param name="contentProjectPath">Path of the actual project file</param>
-        /// <param name="folderPath">Path of the project directory</param>
-        public ContentProject(string name, string contentProjectPath, string folderPath,bool readOnly = false) : base(name, null)
-        {
-            ContentProjectPath = contentProjectPath;
-            FilePath = folderPath;
-
-            _readOnly = readOnly;
-            _internalHistory = new History.History();
-            History = new HistoryUnion();
-            History.Add(_internalHistory);
-
-
-            //ContentItemChanged += (a, b) => HasUnsavedChanges = true;
-            PropertyValueChanged += OnPropertyChangedT;
-            CollectionChanged += OnCollectionChangedT;
-        }
+        [Browsable(false)] public HistoryUnion History { get; }
 
         private void OnCollectionChangedT(object sender, NotifyCollectionChangedEventArgs args)
         {
             //var col = sender as ContentItemCollection;
             //if (col == null)
             //    throw new NotSupportedException();
-            var item = HistoryCollectionChange<ContentItem>.CreateInstance((sender as ContentFolder)?.Content, args);
+            if (sender is not ContentFolder folder)
+                return;
+            var item = HistoryCollectionChange<ContentItem>.CreateInstance(folder.Content, args);
             if (item == null)
                 throw new NotSupportedException();
             _internalHistory.Push(item);
@@ -142,37 +142,34 @@ namespace engenious.Content.Models
             HasUnsavedChanges = true;
         }
 
+        /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
-            
             SupressChangedEvent = true;
             Name = element.Element("Name")?.Value ?? "Content";
-            _configuration = element.Element("Configuration")?.Value;
-            _outputDirectory = element.Element("OutputDir")?.Value;
+            _configuration = element.Element("Configuration")?.Value ?? "Release";
+            _outputDirectory = element.Element("OutputDir")?.Value ?? "bin/{Configuration}";
 
             var refElement = element.Element("References");
 
-            if (refElement != null && refElement.HasElements)
-            {
+            if (refElement is { HasElements: true })
                 foreach (var referenceElement in refElement.Elements("Reference"))
-                    _references.Add(referenceElement.Value);
-            }
+                    References.Add(referenceElement.Value);
             var xElement = element.Element("Contents");
             if (xElement == null)
                 return this;
 
             foreach (var subElement in xElement.Elements())
-            {
                 if (subElement.Name == "ContentFile")
                     Content.Add(new ContentFile(string.Empty, this).Deserialize(subElement));
                 else if (subElement.Name == "ContentFolder")
                     Content.Add(new ContentFolder(string.Empty, this).Deserialize(subElement));
-            }
             SupressChangedEvent = false;
 
             return this;
         }
 
+        /// <inheritdoc />
         public override XElement Serialize()
         {
             var element = new XElement("Content");
@@ -181,11 +178,8 @@ namespace engenious.Content.Models
 
             var refElement = new XElement("References");
 
-            if (References != null)
-            {
-                foreach (var reference in References)
-                    refElement.Add(new XElement("Reference", reference));
-            }
+            foreach (var reference in References)
+                refElement.Add(new XElement("Reference", reference));
 
             element.Add(new XElement("Configuration", Configuration));
             element.Add(new XElement("OutputDir", OutputDirectory));
@@ -198,33 +192,48 @@ namespace engenious.Content.Models
             return element;
         }
 
-        public static ContentProject Load(string path,bool readOnly = false)
+        /// <summary>
+        ///     Loads a content project from a file.
+        /// </summary>
+        /// <param name="path">The path to load the content project from.</param>
+        /// <param name="readOnly">Whether to open the project in read-only mode.</param>
+        /// <returns>The loaded content project.</returns>
+        public static ContentProject Load(string path, bool readOnly = false)
         {
-            return Load(path, Path.GetDirectoryName(path),readOnly);
+            return Load(path, Path.GetDirectoryName(path), readOnly);
         }
 
-        public static ContentProject Load(string path, string contentFolderPath,bool readOnly = false)
+        private static ContentProject Load(string path, string contentFolderPath, bool readOnly = false)
         {
             var element = XElement.Load(path);
 
-            var project = new ContentProject(string.Empty, path, contentFolderPath,readOnly);
+            var project = new ContentProject(string.Empty, path, contentFolderPath, readOnly);
 
             project.Deserialize(element);
 
             return project;
         }
 
+        /// <summary>
+        ///     Tries to save the content project.
+        /// </summary>
+        /// <remarks>Read-Only projects do nothing when this method is called.</remarks>
         public void Save()
         {
             Save(ContentProjectPath);
         }
 
+        /// <summary>
+        ///     Tries to save the content project to a specific file.
+        /// </summary>
+        /// <param name="path">The file path to save the content project to.</param>
+        /// <remarks>Read-Only projects do nothing when this method is called.</remarks>
         public void Save(string path)
         {
             if (_readOnly)
                 return;
-            var xelement = Serialize();
-            xelement.Save(path);
+            var element = Serialize();
+            element.Save(path);
             ContentProjectPath = path;
             HasUnsavedChanges = false;
         }

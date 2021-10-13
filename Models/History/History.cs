@@ -3,19 +3,30 @@ using System.Collections.Generic;
 
 namespace engenious.Content.Models.History
 {
+    /// <summary>
+    ///     Implementation for a collection of state changes that can be undone and redone.
+    /// </summary>
     public class History : IHistory
     {
-        public event EventHandler HistoryChanged;
-        public event EventHandler HistoryItemAdded;
-        private bool _isWorking;
         private readonly Stack<IHistoryItem> _undo, _redo;
+        private bool _isWorking;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="History"/> class.
+        /// </summary>
         public History()
         {
             _undo = new Stack<IHistoryItem>();
             _redo = new Stack<IHistoryItem>();
         }
 
+        /// <inheritdoc />
+        public event EventHandler? HistoryChanged;
+
+        /// <inheritdoc />
+        public event EventHandler? HistoryItemAdded;
+
+        /// <inheritdoc />
         public void Push(IHistoryItem item)
         {
             if (_isWorking)
@@ -25,9 +36,13 @@ namespace engenious.Content.Models.History
             HistoryChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <inheritdoc />
         public bool CanUndo => _undo.Count > 0;
+
+        /// <inheritdoc />
         public bool CanRedo => _redo.Count > 0;
 
+        /// <inheritdoc />
         public void Undo()
         {
             var item = _undo.Pop();
@@ -39,6 +54,7 @@ namespace engenious.Content.Models.History
             HistoryChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <inheritdoc />
         public void Redo()
         {
             var item = _redo.Pop();

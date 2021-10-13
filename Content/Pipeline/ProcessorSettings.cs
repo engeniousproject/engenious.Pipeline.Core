@@ -2,168 +2,138 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Xml.Linq;
 
 namespace engenious.Content.Pipeline
 {
+    /// <summary>
+    ///     Base class for processor specific settings.
+    /// </summary>
     [Serializable]
     [TypeConverter(typeof(CustomExpandableObjectConverter))]
     public class ProcessorSettings
     {
+        /// <inheritdoc />
         public override string ToString()
         {
             return string.Empty;
         }
 
         #region Serialization
-        private static void SetPrimitive(PropertyDescriptor property,object obj,string val)
+
+        private static void SetPrimitive(PropertyDescriptor property, object obj, string? val)
         {
             var code = Type.GetTypeCode(property.PropertyType);
             if (code != TypeCode.String && val == null)
                 return;
-            switch(code)
+            switch (code)
             {
                 case TypeCode.String:
-                    property.SetValue(obj,val);
+                    property.SetValue(obj, val);
                     break;
                 case TypeCode.Char:
-                    property.SetValue(obj,string.IsNullOrEmpty(val) ? '\0' : val[0]);
+                    property.SetValue(obj, string.IsNullOrEmpty(val) ? '\0' : val![0]);
                     break;
                 case TypeCode.SByte:
-                    {
-                        sbyte num;
-                        if (sbyte.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (sbyte.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Int16:
-                    {
-                        short num;
-                        if (short.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (short.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Int32:
-                    {
-                        int num;
-                        if (int.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Int64:
-                    {
-                        long num;
-                        if (long.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (long.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Byte:
-                    {
-                        byte num;
-                        if (byte.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (byte.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.UInt16:
-                    {
-                        ushort num;
-                        if (ushort.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (ushort.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.UInt32:
-                    {
-                        uint num;
-                        if (uint.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (uint.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.UInt64:
-                    {
-                        ulong num;
-                        if (ulong.TryParse(val,NumberStyles.Integer,CultureInfo.InvariantCulture,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (ulong.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Boolean:
-                    {
-                        bool tmp;
-                        if (bool.TryParse(val,out tmp))
-                            property.SetValue(obj,tmp);
-                    }
+                {
+                    if (bool.TryParse(val, out var tmp))
+                        property.SetValue(obj, tmp);
+                }
                     break;
                 case TypeCode.DateTime:
-                    {
-                        DateTime dt;
-                        if (DateTime.TryParse(val,out dt))
-                            property.SetValue(obj,dt);
-                    }
+                {
+                    if (DateTime.TryParse(val, out var dt))
+                        property.SetValue(obj, dt);
+                }
                     break;
                 case TypeCode.Single:
-                    {
-                        float num;
-                        if (float.TryParse(val,NumberStyles.Float,CultureInfo.InvariantCulture.NumberFormat,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture.NumberFormat, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Double:
-                    {
-                        double num;
-                        if (double.TryParse(val,NumberStyles.Float,CultureInfo.InvariantCulture.NumberFormat,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (double.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture.NumberFormat, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
                 case TypeCode.Decimal:
-                    {
-                        decimal num;
-                        if (decimal.TryParse(val,NumberStyles.Float,CultureInfo.InvariantCulture.NumberFormat,out num))
-                        {
-                            property.SetValue(obj,num);
-                        }
-                    }
+                {
+                    if (decimal.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture.NumberFormat, out var num))
+                        property.SetValue(obj, num);
+                }
                     break;
             }
         }
-        private static void ReadObject(XElement nodes,object obj)
+
+        private static void ReadObject(XElement nodes, object obj)
         {
-            var props = TypeDescriptor.GetProperties(obj).OfType<PropertyDescriptor>().ToDictionary(x => x.Name, x => x);
+            var props = TypeDescriptor.GetProperties(obj).OfType<PropertyDescriptor>()
+                .ToDictionary(x => x.Name, x => x);
             foreach (var setting in nodes.Elements())
-            {
                 if (props.TryGetValue(setting.Name.LocalName, out var property))
                 {
-                    
                     var val = setting.Nodes().OfType<XText>().FirstOrDefault()?.Value;
                     if (val == null)
                         continue;
                     if (property.PropertyType.IsPrimitive)
                     {
-                        SetPrimitive(property,obj,val);
+                        SetPrimitive(property, obj, val);
                     }
                     else if (property.PropertyType.IsEnum)
                     {
-                        try{
-                            property.SetValue(obj,Enum.Parse(property.PropertyType,val));
+                        try
+                        {
+                            property.SetValue(obj, Enum.Parse(property.PropertyType, val));
                         }
                         catch
                         {
@@ -176,23 +146,27 @@ namespace engenious.Content.Pipeline
                         if (tmp != null)
                         {
                             ReadObject(setting, tmp);
-                            property.SetValue(obj,tmp);   
+                            property.SetValue(obj, tmp);
                         }
                     }
                 }
-            }
         }
 
+        /// <summary>
+        ///     Reads the processor settings from a xml node.
+        /// </summary>
+        /// <param name="nodes">The xml node to read from.</param>
         public virtual void Read(XElement nodes)
         {
-            ReadObject(nodes,this);
+            ReadObject(nodes, this);
         }
+
         private static string? PrimitiveToString(object? obj)
         {
             if (obj == null)
                 return null;
             var code = Type.GetTypeCode(obj.GetType());
-            switch(code)
+            switch (code)
             {
                 case TypeCode.String:
                     return (string)obj;
@@ -219,14 +193,26 @@ namespace engenious.Content.Pipeline
                     return ((uint)obj).ToString(CultureInfo.InvariantCulture);
                 case TypeCode.UInt64:
                     return ((ulong)obj).ToString(CultureInfo.InvariantCulture);
+                case TypeCode.Byte:
+                    return ((byte)obj).ToString(CultureInfo.InvariantCulture);
+                case TypeCode.SByte:
+                    return ((sbyte)obj).ToString(CultureInfo.InvariantCulture);
+                case TypeCode.DBNull:
+                case TypeCode.Empty:
+                case TypeCode.Object:
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-            return obj.ToString();
         }
 
-        private static void WriteObject(XElement writer, object obj)
+        private static void WriteObject(XElement writer, object? obj)
         {
+            if (obj == null)
+                return;
             foreach (var prop in TypeDescriptor.GetProperties(obj).OfType<PropertyDescriptor>())
             {
+                if (prop == null)
+                    continue;
                 var type = prop.PropertyType;
                 if (prop.IsReadOnly)
                     continue;
@@ -243,6 +229,10 @@ namespace engenious.Content.Pipeline
             }
         }
 
+        /// <summary>
+        ///     Writes the processor settings to xml.
+        /// </summary>
+        /// <param name="writer">The xml element to write to.</param>
         public virtual void Write(XElement writer)
         {
             WriteObject(writer, this);
@@ -251,4 +241,3 @@ namespace engenious.Content.Pipeline
         #endregion
     }
 }
-

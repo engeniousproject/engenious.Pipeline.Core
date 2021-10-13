@@ -1,146 +1,144 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Xml.Linq;
 using engenious.Content.Pipeline;
 
 namespace engenious.Content.Models
 {
+    /// <summary>
+    ///     Class for content files for the content pipeline.
+    /// </summary>
     public class ContentFile : ContentItem
     {
-        /// <summary>
-        /// Path of the file
-        /// </summary>
-        public override string FilePath => Path.Combine(Parent.FilePath, Name);
+        private string? _importerName;
+
+        private string? _processorName;
 
         /// <summary>
-        /// Importer of the file
-        /// </summary>
-        [Browsable(false)]
-        public IContentImporter Importer { get; private set; }
-
-        /// <summary>
-        /// Processor of the file
-        /// </summary>
-        [Browsable(false)]
-        public IContentProcessor Processor { get; private set; }
-
-        /// <summary>
-        /// Name of the importer
-        /// </summary>
-        [RefreshProperties(RefreshProperties.All)]
-        [TypeConverter(typeof(ImporterNameDropDownConverter))]
-        public string ImporterName { get => importerName;
-            set
-            {
-                if (importerName == value)
-                    return;
-                var old = importerName;
-                importerName = value;
-                Importer = PipelineHelper.CreateImporter(Path.GetExtension(FilePath), ref importerName);
-                OnPropertyChanged(old,value);
-            }
-        }
-        private string importerName;
-
-        /// <summary>
-        /// Name of the processor
-        /// </summary>
-        [RefreshProperties(RefreshProperties.All)]
-        [TypeConverter(typeof(ProcessorNameDropDownConverter))]
-        public string ProcessorName { get => processorName;
-            set
-            {
-                if (value == processorName) return;
-                var old = processorName;
-                processorName = value;
-
-                if (string.IsNullOrWhiteSpace(processorName))
-                    processorName = PipelineHelper.GetProcessor(Name, importerName);
-
-                if (old != processorName && !string.IsNullOrWhiteSpace(processorName) && Importer != null)
-                    Processor = PipelineHelper.CreateProcessor(Importer.GetType(), processorName);
-
-                OnPropertyChanged(old,value);
-            }
-        }
-
-        private string processorName;
-
-
-        /// <summary>
-        /// Settings for the processor
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
-        public ProcessorSettings Settings
-        {
-            get
-            {
-                return Processor?.Settings;
-            }
-            set
-            {
-                if (Processor == null)
-                    return;
-                
-                Processor.Settings = value;
-            }
-        }
-
-        /// <summary>
-        /// Constructor
+        ///     Initializes a new instance of the <see cref="ContentFile"/> class.
         /// </summary>
         /// <param name="name">Name of the file</param>
         /// <param name="parent">Parent item</param>
         public ContentFile(string name, ContentItem parent) : base(name, parent)
         {
-            Importer = PipelineHelper.CreateImporter(Path.GetExtension(name), ref importerName);
-            if (string.IsNullOrWhiteSpace(processorName))
-                processorName = PipelineHelper.GetProcessor(Name, importerName);
-            if (!string.IsNullOrWhiteSpace(processorName) && Importer != null)
-                Processor = PipelineHelper.CreateProcessor(Importer.GetType(), processorName);
+            Importer = PipelineHelper.CreateImporter(Path.GetExtension(name), ref _importerName);
+            if (string.IsNullOrWhiteSpace(_processorName))
+                _processorName = PipelineHelper.GetProcessor(Name, _importerName);
+            if (!string.IsNullOrWhiteSpace(_processorName) && Importer != null)
+                Processor = PipelineHelper.CreateProcessor(Importer.GetType(), _processorName);
         }
 
         /// <summary>
-        /// Deserialize the given XmlElement
+        ///     Gets the path of the file
         /// </summary>
-        /// <param name="element">XMLElement</param>
+        public override string FilePath => Parent == null ? Name : Path.Combine(Parent.FilePath, Name);
+
+        /// <summary>
+        ///     Gets the resolved <see cref="IContentImporter"/> of the file.
+        /// </summary>
+        [Browsable(false)]
+        public IContentImporter? Importer { get; private set; }
+
+        /// <summary>
+        ///     Gets the resolved <see cref="IContentProcessor"/> of the file.
+        /// </summary>
+        [Browsable(false)]
+        public IContentProcessor? Processor { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the name of the importer to use for this file.
+        /// </summary>
+        [RefreshProperties(RefreshProperties.All)]
+        [TypeConverter(typeof(ImporterNameDropDownConverter))]
+        public string? ImporterName
+        {
+            get => _importerName;
+            set
+            {
+                if (_importerName == value)
+                    return;
+                var old = _importerName;
+                _importerName = value;
+                Importer = PipelineHelper.CreateImporter(Path.GetExtension(FilePath), ref _importerName);
+                OnPropertyChanged(old, value);
+            }
+        }
+
+        /// <summary>
+        ///     Gets or sets the name of the processor to use for this file.
+        /// </summary>
+        [RefreshProperties(RefreshProperties.All)]
+        [TypeConverter(typeof(ProcessorNameDropDownConverter))]
+        public string? ProcessorName
+        {
+            get => _processorName;
+            set
+            {
+                if (value == _processorName) return;
+                var old = _processorName;
+                _processorName = value;
+
+                if (string.IsNullOrWhiteSpace(_processorName))
+                    _processorName = PipelineHelper.GetProcessor(Name, _importerName);
+
+                if (old != _processorName && !string.IsNullOrWhiteSpace(_processorName) && Importer != null)
+                    Processor = PipelineHelper.CreateProcessor(Importer.GetType(), _processorName);
+
+                OnPropertyChanged(old, value);
+            }
+        }
+
+
+        /// <summary>
+        ///     Gets or sets the <see cref="Processor"/> specific settings.
+        /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        public ProcessorSettings? Settings
+        {
+            get => Processor?.Settings;
+            set
+            {
+                if (Processor == null)
+                    return;
+
+                Processor.Settings = value;
+            }
+        }
+
+        /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
             SupressChangedEvent = true;
-            Name = element.Element("Name")?.Value;
+            Name = element.Element("Name")?.Value ??
+                   throw new ArgumentException($"{nameof(element)} has no \"Name\" tag.");
 
             if (!File.Exists(FilePath))
                 Error = ContentErrorType.NotFound;
 
-            importerName = element.Element("Importer")?.Value;
-            Importer = PipelineHelper.CreateImporter(Path.GetExtension(FilePath), ref importerName);
+            _importerName = element.Element("Importer")?.Value;
+            Importer = PipelineHelper.CreateImporter(Path.GetExtension(FilePath), ref _importerName);
 
             if (Importer == null)
                 Error |= ContentErrorType.ImporterError;
 
-            processorName = element.Element("Processor")?.Value;
-            if (string.IsNullOrWhiteSpace(processorName))
-                processorName = PipelineHelper.GetProcessor(Name, importerName);
+            _processorName = element.Element("Processor")?.Value;
+            if (string.IsNullOrWhiteSpace(_processorName))
+                _processorName = PipelineHelper.GetProcessor(Name, _importerName);
 
-            if (!string.IsNullOrWhiteSpace(processorName) && Importer != null)
-                Processor = PipelineHelper.CreateProcessor(Importer.GetType(), processorName);
+            if (!string.IsNullOrWhiteSpace(_processorName) && Importer != null)
+                Processor = PipelineHelper.CreateProcessor(Importer.GetType(), _processorName);
 
             if (Processor == null)
                 Error |= ContentErrorType.ProcessorError;
 
-            if (Settings != null && element.Element("Settings") != null)
-            {
-                Settings.Read(element.Element("Settings"));
-            }
+            if (Settings != null && element.Element("Settings") != null) Settings.Read(element.Element("Settings"));
 
             SupressChangedEvent = false;
             return this;
         }
 
-        /// <summary>
-        /// Serialize the object and return a XmlElement
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public override XElement Serialize()
         {
             var element = new XElement("ContentFile");

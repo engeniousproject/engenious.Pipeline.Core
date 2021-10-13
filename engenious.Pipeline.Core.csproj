@@ -4,9 +4,11 @@
         <TargetFramework>netstandard2.0</TargetFramework>
         <LangVersion>9.0</LangVersion>
         <LitGitIncludeProjectUrl>true</LitGitIncludeProjectUrl>
+        <Nullable>enable</Nullable>
+        <DocumentationFile>$(BaseIntermediateOutputPath)/engenious.Pipeline.Core.xml</DocumentationFile>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="LitGit" Version="0.2.0.47-alpha" PrivateAssets="all" />
+        <PackageReference Include="LitGit" Version="0.2.0.48-alpha" PrivateAssets="all" />
     </ItemGroup>
 
 </Project>
