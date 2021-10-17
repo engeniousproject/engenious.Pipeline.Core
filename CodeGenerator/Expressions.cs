@@ -168,9 +168,23 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Lines">The lines this expression consists of.</param>
     /// <param name="Indentation">The indentation level of this expression.</param>
     [Serializable]
-    public record MultilineExpressionDefinition(CodeExpressionDefinition[] Lines, int Indentation = 0)
+    public record MultilineExpressionDefinition(List<CodeExpressionDefinition> Lines, int Indentation = 0)
         : CodeExpressionDefinition(Indentation)
     {
+        /// <inheritdoc />
+        public MultilineExpressionDefinition(IEnumerable<CodeExpressionDefinition> initialLines, int indentation = 0)
+            : this(new List<CodeExpressionDefinition>(initialLines), indentation)
+        {
+                
+        }
+
+        /// <inheritdoc />
+        public MultilineExpressionDefinition(int indentation = 0)
+            : this(new List<CodeExpressionDefinition>(), indentation)
+        {
+                
+        }
+        
         /// <inheritdoc />
         public override IEnumerable<(int indentation, string line, bool ensureNewLine)> ToCode()
         {

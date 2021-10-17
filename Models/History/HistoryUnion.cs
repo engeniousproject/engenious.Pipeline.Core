@@ -27,7 +27,9 @@ namespace engenious.Content.Models.History
         public event EventHandler? HistoryChanged;
 
         /// <inheritdoc />
+#pragma warning disable CS0067
         public event EventHandler? HistoryItemAdded;
+#pragma warning restore CS0067
 
         /// <inheritdoc />
         public void Undo()

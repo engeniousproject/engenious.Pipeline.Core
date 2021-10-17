@@ -18,6 +18,9 @@ namespace engenious.Content.CodeGenerator
         public static void WriteModifiers(this ICodeBuilder builder, TypeModifiers modifiers)
         {
             WriteModifiersPart1(builder, (GenericModifiers)modifiers);
+            
+            if ((modifiers & TypeModifiers.Sealed) != 0) builder.Append("sealed ");
+            
             WriteModifiersPart2(builder, (GenericModifiers)modifiers);
 
             if ((modifiers & TypeModifiers.Class) != 0)

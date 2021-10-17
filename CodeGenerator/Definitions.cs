@@ -49,6 +49,10 @@ namespace engenious.Content.CodeGenerator
         ///     A <see cref="TypeReference"/> to <see cref="ulong"/>.
         /// </summary>
         public static readonly TypeReference UInt64 = new(null, "ulong");
+        /// <summary>
+        ///     A <see cref="TypeReference"/> to <see cref="bool"/>.
+        /// </summary>
+        public static readonly TypeReference Boolean = new(null, "bool");
     }
 
 
@@ -409,6 +413,12 @@ namespace engenious.Content.CodeGenerator
         /// </summary>
         public static MethodBodyDefinition EmptyBody =
             new(new BlockExpressionDefinition(new SimpleExpressionDefinition(string.Empty)));
+
+        /// <summary>
+        ///     Gets an empty block body.
+        /// </summary>
+        public static MethodBodyDefinition EmptyBlockBody =
+            new(new BlockExpressionDefinition(new MultilineExpressionDefinition()));
 
         /// <inheritdoc />
         public void WriteTo(ICodeBuilder builder)

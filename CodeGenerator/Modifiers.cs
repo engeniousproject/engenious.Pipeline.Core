@@ -81,13 +81,17 @@ namespace engenious.Content.CodeGenerator
         /// </summary>
         Partial = 64,
         /// <summary>
+        ///     The sealed modifier.
+        /// </summary>
+        Sealed = 128,
+        /// <summary>
         ///     The class modifier which marks the type as a class.
         /// </summary>
-        Class = 128,
+        Class = 256,
         /// <summary>
         ///     The struct modifier which marks the type as a struct.
         /// </summary>
-        Struct = 256
+        Struct = 512
     }
 
     /// <summary>
