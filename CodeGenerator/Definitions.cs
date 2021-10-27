@@ -171,9 +171,25 @@ namespace engenious.Content.CodeGenerator
     /// <param name="BaseTypes">The implemented and inherited base types.</param>
     [Serializable]
     public record TypeDefinition
-        (string Namespace, TypeModifiers Modifiers, string Name, TypeReference[]? BaseTypes) : TypeReference(Namespace,
+        (string Namespace, TypeModifiers Modifiers, string Name) : TypeReference(Namespace,
             Name)
     {
+        private List<TypeReference> _baseTypes;
+
+        public List<TypeReference> BaseTypes => _baseTypes ??= new();
+
+        private TypeDefinition(string @namespace, TypeModifiers modifiers, string name,
+            List<TypeReference>? baseTypes) : this(@namespace, modifiers, name)
+        {
+            _baseTypes = baseTypes ?? new();
+        }
+        /// <inheritdoc />
+        public TypeDefinition(string @namespace, TypeModifiers modifiers, string name,
+            IEnumerable<TypeReference>? baseTypes) : this(@namespace, modifiers, name,
+            baseTypes == null ? null : new(baseTypes))
+        {
+            
+        }
         /// <summary>
         ///     Gets the methods of this <see cref="TypeDefinition"/>.
         /// </summary>
@@ -244,10 +260,10 @@ namespace engenious.Content.CodeGenerator
             builder.EnsureNewLine();
             builder.WriteModifiers(Modifiers);
             builder.Append(Name);
-            if (BaseTypes is { Length: > 0 })
+            if (BaseTypes.Count > 0 )
             {
                 builder.Append(" : ");
-                for (var i = 0; i < BaseTypes.Length; i++)
+                for (var i = 0; i < BaseTypes.Count; i++)
                 {
                     if (i != 0)
                         builder.Append(", ");

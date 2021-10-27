@@ -14,6 +14,7 @@ namespace engenious.Content
     /// </summary>
     public static class PipelineHelper
     {
+        private static readonly Dictionary<string, Type> ResolvableTypes = new();
         private static readonly List<Type> Importers = new();
         private static readonly Dictionary<string, Type> Processors = new();
 
@@ -22,7 +23,7 @@ namespace engenious.Content
 
         private static readonly HashSet<Assembly> Assemblies = new();
 
-        private static bool _assembliesCollected, _processorsCollected, _importersCollected;
+        private static bool _assembliesCollected, _processorsCollected, _importersCollected, _resolveableTypesCollected;
 
         private static void InitDefaultAssemblies()
         {
@@ -43,8 +44,12 @@ namespace engenious.Content
         public static void DefaultInit()
         {
             InitDefaultAssemblies();
-            ListImporters();
-            ListProcessors();
+            InitializeCache();
+        }
+
+        public static Type? ResolveType(string fullName)
+        {
+            return ResolvableTypes.TryGetValue(fullName, out var res) ? res : null;
         }
 
         /// <summary>
@@ -105,8 +110,7 @@ namespace engenious.Content
                     // ignored
                 }
 
-            ListImporters();
-            ListProcessors();
+            InitializeCache();
         }
 
         private static void ListImporters()
@@ -152,6 +156,28 @@ namespace engenious.Content
             }
 
             return fitting;
+        }
+
+        private static void InitializeCache()
+        {
+            ListResolveableTypes();
+            ListImporters();
+            ListProcessors();
+        }
+
+        private static void ListResolveableTypes()
+        {
+            if (_resolveableTypesCollected)
+                return;
+            _resolveableTypesCollected = true;
+            ResolvableTypes.Clear();
+            foreach(var assembly in Assemblies)
+            foreach (var type in assembly.GetTypes())
+            {
+                if (type.FullName == null)
+                    continue;
+                ResolvableTypes[type.FullName] = type;
+            }
         }
 
         private static void ListProcessors()
