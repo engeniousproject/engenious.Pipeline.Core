@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using NonSucking.Framework.Serialization;
 
 namespace engenious.Content.CodeGenerator
 {
@@ -59,8 +61,7 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     Base class for all code definitions.
     /// </summary>
-    [Serializable]
-    public abstract record CodeDefinition : ICode
+    public abstract partial record CodeDefinition : ICode
     {
         /// <inheritdoc />
         public abstract void WriteTo(ICodeBuilder builder);
@@ -81,8 +82,8 @@ namespace engenious.Content.CodeGenerator
     ///     The namespace of the type or <c>null</c> for global types as well as nested <see cref="TypeDefinition"/>.
     /// </param>
     /// <param name="Name">The name of the type.</param>
-    [Serializable]
-    public record TypeReference(string? Namespace, string Name) : CodeDefinition
+    [Nooson]
+    public partial record TypeReference(string? Namespace, string Name) : CodeDefinition
     {
         /// <inheritdoc />
         public override string ToString()
@@ -116,9 +117,9 @@ namespace engenious.Content.CodeGenerator
         }
     }
 
-    // public record GeneratedCodeDefinition
+    // public partial record GeneratedCodeDefinition
     // {
-    //     public List<FileDefinition> Files { get; } = new();
+    //     public List<FileDefinition> Files { get; init; } = new();
     //
     //     private static void CreatePathRecursively(string path)
     //     {
@@ -140,17 +141,17 @@ namespace engenious.Content.CodeGenerator
     ///     Represents a file containing multiple types.
     /// </summary>
     /// <param name="Name">The name of the file.</param>
-    [Serializable]
-    public record FileDefinition(string Name) : ICode
+    [Nooson]
+    public partial record FileDefinition(string Name) : ICode
     {
         /// <summary>
         ///     Gets the used namespace imports for this file.
         /// </summary>
-        public List<string> Usings { get; } = new();
+        public List<string> Usings { get; init; } = new();
         /// <summary>
         ///     Gets the types defined in this file.
         /// </summary>
-        public Dictionary<string, TypeDefinition> Types { get; } = new();
+        public Dictionary<string, TypeDefinition> Types { get; init; } = new();
 
         /// <inheritdoc />
         public void WriteTo(ICodeBuilder builder)
@@ -168,45 +169,47 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Namespace">The namespace of the type.</param>
     /// <param name="Modifiers">The <see cref="TypeModifiers"/> for this type.</param>
     /// <param name="Name">The name of this type.</param>
-    /// <param name="BaseTypes">The implemented and inherited base types.</param>
-    [Serializable]
-    public record TypeDefinition
-        (string Namespace, TypeModifiers Modifiers, string Name) : TypeReference(Namespace,
-            Name)
+    [Nooson]
+    public partial record TypeDefinition
+        (string Namespace, TypeModifiers Modifiers, string Name, string? Comment = null) : TypeReference(Namespace,
+            Name), IComment
     {
         private List<TypeReference> _baseTypes;
-
+    
+        /// <summary>
+        /// Gets the implemented and inherited base types.
+        /// </summary>
         public List<TypeReference> BaseTypes => _baseTypes ??= new();
 
         private TypeDefinition(string @namespace, TypeModifiers modifiers, string name,
-            List<TypeReference>? baseTypes) : this(@namespace, modifiers, name)
+            List<TypeReference>? baseTypes, string? comment = null) : this(@namespace, modifiers, name, comment)
         {
             _baseTypes = baseTypes ?? new();
         }
         /// <inheritdoc />
         public TypeDefinition(string @namespace, TypeModifiers modifiers, string name,
-            IEnumerable<TypeReference>? baseTypes) : this(@namespace, modifiers, name,
-            baseTypes == null ? null : new(baseTypes))
+            IEnumerable<TypeReference>? baseTypes, string? comment = null) : this(@namespace, modifiers, name,
+            baseTypes == null ? null : new(baseTypes), comment)
         {
             
         }
         /// <summary>
         ///     Gets the methods of this <see cref="TypeDefinition"/>.
         /// </summary>
-        public List<MethodDefinition> Methods { get; } = new();
+        public List<MethodDefinition> Methods { get; init; } = new();
         /// <summary>
         ///     Gets the fields of this <see cref="TypeDefinition"/>.
         /// </summary>
-        public List<FieldDefinition> Fields { get; } = new();
+        public List<FieldDefinition> Fields { get; init; } = new();
         /// <summary>
         ///     Gets the properties of this <see cref="TypeDefinition"/>.
         /// </summary>
-        public List<PropertyDefinition> Properties { get; } = new();
+        public List<PropertyDefinition> Properties { get; init; } = new();
 
         /// <summary>
         ///     Gets the nested types of this <see cref="TypeDefinition"/>.
         /// </summary>
-        public List<TypeDefinition> NestedTypes { get; } = new();
+        public List<TypeDefinition> NestedTypes { get; init; } = new();
         
         /// <summary>
         ///     Gets the full name of this type.
@@ -219,15 +222,16 @@ namespace engenious.Content.CodeGenerator
         /// <param name="modifiers">The parent <see cref="MethodModifiers"/> to use for the property.</param>
         /// <param name="type">The type of the property and field.</param>
         /// <param name="name">The name of the property to create.</param>
+        /// <param name="comment">The comment for the property method.</param>
         /// <param name="getterModifiers">The <see cref="MethodModifiers"/> for the getter method.</param>
         /// <param name="setterModifiers">The <see cref="MethodModifiers"/> for the setter method.</param>
         /// <returns>The created auto property.</returns>
-        public PropertyDefinition AddAutoProperty(MethodModifiers modifiers, TypeReference type, string name,
+        public PropertyDefinition AddAutoProperty(MethodModifiers modifiers, TypeReference type, string name, string? comment = null,
             MethodModifiers getterModifiers = MethodModifiers.None,
             MethodModifiers setterModifiers = MethodModifiers.None)
         {
             var p = new PropertyDefinition(modifiers, type, name, new SimplePropertyGetter(),
-                new SimplePropertySetter(), getterModifiers, setterModifiers);
+                new SimplePropertySetter(), getterModifiers, setterModifiers, Comment: comment);
             Properties.Add(p);
             return p;
         }
@@ -258,6 +262,10 @@ namespace engenious.Content.CodeGenerator
         protected void WriteTypeDefinition(ICodeBuilder builder)
         {
             builder.EnsureNewLine();
+            if (Comment is not null)
+            {
+                builder.AppendLine(Comment);
+            }
             builder.WriteModifiers(Modifiers);
             builder.Append(Name);
             if (BaseTypes.Count > 0 )
@@ -299,8 +307,9 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Type">The type of the parameter.</param>
     /// <param name="Name">The name of the parameter.</param>
-    [Serializable]
-    public record ParameterDefinition(TypeReference Type, string Name) : CodeDefinition
+    [Nooson]
+    public partial record ParameterDefinition(TypeReference Type, string Name, string? Comment = null)
+        : CodeDefinition, IComment
     {
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
@@ -318,8 +327,8 @@ namespace engenious.Content.CodeGenerator
     /// <param name="ReturnType">The return type of the method.</param>
     /// <param name="Name">The name of the method.</param>
     /// <param name="Parameters">The parameters of the method.</param>
-    [Serializable]
-    public record SignatureDefinition(MethodModifiers Modifiers, TypeReference ReturnType, string Name,
+    [Nooson]
+    public partial record SignatureDefinition(MethodModifiers Modifiers, TypeReference ReturnType, string Name,
         ParameterDefinition[] Parameters) : CodeDefinition
     {
         /// <inheritdoc />
@@ -344,8 +353,12 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     A base class for method definitions.
     /// </summary>
-    [Serializable]
-    public abstract record MethodDefinition : CodeDefinition;
+    [NoosonDynamicType(typeof(ConstructorDefinition),
+        typeof(ImplementedMethodDefinition),
+        typeof(SimplePropertyGetter),
+        typeof(SimplePropertySetter),
+        typeof(ImplementedPropertyMethodDefinition))]
+    public abstract partial record MethodDefinition : CodeDefinition;
 
     /// <summary>
     ///     Represents a constructor method.
@@ -355,14 +368,21 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Parameters">The parameters of the constructor.</param>
     /// <param name="MethodBody">The body implementation of the constructor.</param>
     /// <param name="BaseCalls">The base constructor call initializers.</param>
-    [Serializable]
-    public record ConstructorDefinition(TypeReference ParentType, MethodModifiers Modifiers,
-        ParameterDefinition[] Parameters, MethodBodyDefinition MethodBody,
-        CodeExpressionDefinition[]? BaseCalls = null) : MethodDefinition
+    [Nooson]
+    public partial record ConstructorDefinition(TypeReference ParentType, MethodModifiers Modifiers,
+        ParameterDefinition[] Parameters, MethodBodyDefinition MethodBody, string? Comment = null,
+        CodeExpressionDefinition[]? BaseCalls = null) : MethodDefinition, IComment
     {
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
         {
+            if (Comment is not null)
+                builder.AppendLine(Comment);
+            foreach (var p in Parameters)
+            {
+                if (p.Comment is not null)
+                    builder.AppendLine($"/// <param name=\"{p.Name}\">{p.Comment}</param>");
+            }
             builder.EnsureNewLine();
             builder.WriteModifiers(Modifiers);
             builder.Append(" ");
@@ -402,13 +422,20 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Signature">The signature of the method.</param>
     /// <param name="MethodBody">The method body.</param>
-    [Serializable]
-    public record ImplementedMethodDefinition
-        (SignatureDefinition Signature, MethodBodyDefinition? MethodBody) : MethodDefinition
+    [Nooson]
+    public partial record ImplementedMethodDefinition
+        (SignatureDefinition Signature, MethodBodyDefinition? MethodBody, string? Comment = null) : MethodDefinition, IComment
     {
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
         {
+            if (Comment is not null)
+                builder.AppendLine(Comment);
+            foreach (var p in Signature.Parameters)
+            {
+                if (p.Comment is not null)
+                    builder.AppendLine($"/// <param name=\"{p.Name}\">{p.Comment}</param>");
+            }
             Signature.WriteTo(builder);
             if (MethodBody == null)
                 builder.Append(";");
@@ -421,8 +448,8 @@ namespace engenious.Content.CodeGenerator
     ///     Represents the body of a method.
     /// </summary>
     /// <param name="Body">The code expressions of the body.</param>
-    [Serializable]
-    public record MethodBodyDefinition(CodeExpressionDefinition Body) : ICode
+    [Nooson]
+    public partial record MethodBodyDefinition(CodeExpressionDefinition Body) : ICode
     {
         /// <summary>
         ///     Gets an empty body.
@@ -457,12 +484,15 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Modifiers">The <see cref="GenericModifiers"/> for the field.</param>
     /// <param name="Type">The type of the field.</param>
     /// <param name="Name">The name of the field.</param>
-    [Serializable]
-    public record FieldDefinition(GenericModifiers Modifiers, TypeReference Type, string Name) : ICode
+    [Nooson]
+    public partial record FieldDefinition(GenericModifiers Modifiers, TypeReference Type, string Name, string? Comment = null)
+        : ICode, IComment
     {
         /// <inheritdoc />
         public void WriteTo(ICodeBuilder builder)
         {
+            if (Comment is not null)
+                builder.AppendLine(Comment);
             builder.WriteModifiers(Modifiers);
             Type.WriteReference(builder);
             builder.Append(" ");
@@ -474,20 +504,9 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     Base class for property getter and setters.
     /// </summary>
-    [Serializable]
-    public abstract record PropertyMethodDefinition : MethodDefinition
+    /// <param name="IsSetter">Whether ths method is a setter(<c>true</c>) or a getter(<c>false</c>).</param>
+    public abstract partial record PropertyMethodDefinition(bool IsSetter) : MethodDefinition
     {
-        private readonly bool _isSetter;
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="PropertyMethodDefinition"/> class.
-        /// </summary>
-        /// <param name="isSetter">Whether ths method is a setter(<c>true</c>) or a getter(<c>false</c>).</param>
-        protected PropertyMethodDefinition(bool isSetter)
-        {
-            _isSetter = isSetter;
-        }
-
         /// <summary>
         ///     Writes the property method body to the <see cref="ICodeBuilder"/>.
         /// </summary>
@@ -497,7 +516,7 @@ namespace engenious.Content.CodeGenerator
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
         {
-            builder.Append(_isSetter ? "set" : "get");
+            builder.Append(IsSetter ? "set" : "get");
             WriteBody(builder);
         }
     }
@@ -505,8 +524,8 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     Represents an implemented property method with a body.
     /// </summary>
-    [Serializable]
-    public record ImplementedPropertyMethodDefinition : PropertyMethodDefinition
+    [Nooson]
+    public partial record ImplementedPropertyMethodDefinition : PropertyMethodDefinition
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ImplementedPropertyMethodDefinition"/> class.
@@ -522,7 +541,7 @@ namespace engenious.Content.CodeGenerator
         /// <summary>
         ///     Gets the method body.
         /// </summary>
-        public MethodBodyDefinition MethodBody { get; }
+        public MethodBodyDefinition MethodBody { get; init; }
 
         /// <inheritdoc />
         protected override void WriteBody(ICodeBuilder builder)
@@ -534,8 +553,8 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     Represents a simple getter for e.g. an auto property.
     /// </summary>
-    [Serializable]
-    public record SimplePropertyGetter : PropertyMethodDefinition
+    [Nooson]
+    public partial record SimplePropertyGetter : PropertyMethodDefinition
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SimplePropertyGetter"/> class.
@@ -555,8 +574,8 @@ namespace engenious.Content.CodeGenerator
     /// <summary>
     ///     Represents a simple setter for e.g. an auto property.
     /// </summary>
-    [Serializable]
-    public record SimplePropertySetter : PropertyMethodDefinition
+    [Nooson]
+    public partial record SimplePropertySetter : PropertyMethodDefinition
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SimplePropertySetter"/> class.
@@ -585,16 +604,21 @@ namespace engenious.Content.CodeGenerator
     /// <param name="SetterModifiers">The setter specific <see cref="MethodModifiers"/>.</param>
     /// <param name="IndexerType">The type for the property indexer;<c>null</c> for properties with no indexer.</param>
     /// <param name="IndexerName">The name for the property indexer;<c>null</c> for properties with no indexer.</param>
-    [Serializable]
-    public record PropertyDefinition(MethodModifiers Modifiers, TypeReference Type, string Name,
+    [Nooson]
+    public partial record PropertyDefinition(MethodModifiers Modifiers, TypeReference Type, string Name,
+        [property: NoosonDynamicType(typeof(SimplePropertyGetter), typeof(SimplePropertySetter), typeof(ImplementedPropertyMethodDefinition))] 
         PropertyMethodDefinition? GetMethod,
-        PropertyMethodDefinition? SetMethod, MethodModifiers GetterModifiers = MethodModifiers.None,
+        [property: NoosonDynamicType(typeof(SimplePropertyGetter), typeof(SimplePropertySetter), typeof(ImplementedPropertyMethodDefinition))] 
+        PropertyMethodDefinition? SetMethod,
+        MethodModifiers GetterModifiers = MethodModifiers.None,
         MethodModifiers SetterModifiers = MethodModifiers.None, TypeReference? IndexerType = null,
-        string? IndexerName = null) : CodeDefinition
+        string? IndexerName = null, string? Comment = null) : CodeDefinition, IComment
     {
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
         {
+            if (Comment is not null)
+                builder.AppendLine(Comment);
             builder.WriteModifiers(Modifiers);
             Type.WriteReference(builder);
             builder.Append(" ");

@@ -2,20 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using System.Runtime.Serialization.Formatters.Binary;
 using engenious.Content.CodeGenerator;
+using NonSucking.Framework.Serialization;
 
 namespace engenious.Content.Pipeline
 {
     /// <summary>
     ///     Created content code for a full build process.
     /// </summary>
-    [Serializable]
-    public class CreatedContentCode
+    [Nooson]
+    public partial class CreatedContentCode
     {
         // private readonly Dictionary<string, CustomAttribute> _buildCacheAttributes;
         // private readonly MethodDefinition _buildCacheCtor;
 
+        [NoosonInclude]
         private Dictionary<string, CreatedTypeContainer> _typeContainers;
 
         /// <summary>
@@ -44,6 +47,7 @@ namespace engenious.Content.Pipeline
         /// <summary>
         ///     Gets all created file definitions for the generated code.
         /// </summary>
+        [NoosonIgnore]
         public IEnumerable<FileDefinition> FileDefinitions => _typeContainers.Values.Select(x => x.FileDefinition);
 
         /// <summary>
@@ -57,10 +61,14 @@ namespace engenious.Content.Pipeline
             try
             {
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
-                var formatter = new BinaryFormatter();
-                var contentCode = (CreatedContentCode)formatter.Deserialize(fs);
-                contentCode.BuildId = buildId;
-                return contentCode;
+                var br = new BinaryReader(fs);
+                return CreatedContentCode.Deserialize(br);
+                // var formatter = new BinaryFormatter();
+                // var contentCode = (CreatedContentCode)formatter.Deserialize(fs);
+                // contentCode.BuildId = buildId;
+                // return contentCode;
+
+
             }
             catch
             {
@@ -75,8 +83,10 @@ namespace engenious.Content.Pipeline
         public void Save(string path)
         {
             using var fs = new FileStream(path, FileMode.Create, FileAccess.Write);
-            var formatter = new BinaryFormatter();
-            formatter.Serialize(fs, this);
+            var bw = new BinaryWriter(fs);
+            Serialize(bw);
+            // var formatter = new BinaryFormatter();
+            // formatter.Serialize(fs, this);
         }
 
         private static void CreatePathRecursively(string path)
@@ -157,8 +167,8 @@ namespace engenious.Content.Pipeline
         /// <summary>
         ///     Class containing the created types for a specific build file.
         /// </summary>
-        [Serializable]
-        public class CreatedTypeContainer
+        [Nooson]
+        public partial class CreatedTypeContainer
         {
             /// <summary>
             ///     Initializes a new instance of the <see cref="CreatedTypeContainer"/> class.

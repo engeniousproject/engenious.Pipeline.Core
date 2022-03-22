@@ -10,13 +10,22 @@
         <LiCoOutput>NOTICE</LiCoOutput>
         <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
+
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
     </PropertyGroup>
     <ItemGroup>
         <None Include="LICENSE" Pack="true" PackagePath="" />
+
+
+        <None Include="GeneratedFiles\**" />
+        <Compile Remove="GeneratedFiles\**" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="LitGit" Version="0.2.0.55-alpha" PrivateAssets="all" />
         <PackageReference Include="LiCo" Version="0.1.11.10-alpha" PrivateAssets="all" />
+        <PackageReference Include="NonSucking.Framework.Serialization" Version="0.1.0.74-alpha" OutputItemType="Analyzer" ReferenceOutputAssembly="true" PrivateAssets="all" />
+        <PackageReference Include="System.Memory" Version="4.5.4" />
     </ItemGroup>
 
 </Project>

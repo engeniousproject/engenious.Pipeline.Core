@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
+using NonSucking.Framework.Serialization;
 namespace engenious.Content.CodeGenerator
 {
     /// <summary>
@@ -73,8 +74,8 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Expression">The string value for the expression</param>
     /// <param name="Indentation">The indentation level of this expression.</param>
-    [Serializable]
-    public record SimpleExpressionDefinition(string Expression, int Indentation = 0)
+    [Nooson]
+    public partial record SimpleExpressionDefinition(string Expression, int Indentation = 0)
         : CodeExpressionDefinition(Indentation)
     {
         /// <inheritdoc />
@@ -104,8 +105,11 @@ namespace engenious.Content.CodeGenerator
     ///     A base class for all code expressions.
     /// </summary>
     /// <param name="Indentation">The indentation level of this expression.</param>
-    [Serializable]
-    public abstract record CodeExpressionDefinition(int Indentation = 0) : ICode
+    [NoosonDynamicType(typeof(BinaryExpressionDefinition),
+        typeof(BlockExpressionDefinition),
+        typeof(MultilineExpressionDefinition),
+        typeof(SimpleExpressionDefinition))]
+    public abstract partial record CodeExpressionDefinition(int Indentation = 0) : ICode
     {
         /// <inheritdoc />
         public virtual void WriteTo(ICodeBuilder builder)
@@ -167,8 +171,8 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Lines">The lines this expression consists of.</param>
     /// <param name="Indentation">The indentation level of this expression.</param>
-    [Serializable]
-    public record MultilineExpressionDefinition(List<CodeExpressionDefinition> Lines, int Indentation = 0)
+    [Nooson]
+    public partial record MultilineExpressionDefinition(List<CodeExpressionDefinition> Lines, int Indentation = 0)
         : CodeExpressionDefinition(Indentation)
     {
         /// <inheritdoc />
@@ -207,8 +211,8 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="ScopeContent">The expressions inside the scope of the block.</param>
     /// <param name="Indentation">The indentation level of this expression.</param>
-    [Serializable]
-    public record BlockExpressionDefinition(CodeExpressionDefinition ScopeContent, int Indentation = 0)
+    [Nooson]
+    public partial record BlockExpressionDefinition(CodeExpressionDefinition ScopeContent, int Indentation = 0)
         : CodeExpressionDefinition(Indentation)
     {
         /// <inheritdoc />
@@ -237,8 +241,8 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Right">The right hand side expression.</param>
     /// <param name="Operator">The operator to use on the expressions.</param>
     /// <param name="Indentation">The indentation level of this expression.</param>
-    [Serializable]
-    public record BinaryExpressionDefinition(CodeExpressionDefinition Left,
+    [Nooson]
+    public partial record BinaryExpressionDefinition(CodeExpressionDefinition Left,
             CodeExpressionDefinition Right, string Operator, int Indentation = 0)
         : CodeExpressionDefinition(Indentation)
     {
