@@ -23,7 +23,11 @@ namespace engenious.Content.CodeGenerator
             
             WriteModifiersPart2(builder, (GenericModifiers)modifiers);
 
-            if ((modifiers & TypeModifiers.Class) != 0)
+            if ((modifiers & TypeModifiers.Record) != 0)
+            {
+                builder.Append("record ");
+            }
+            else if ((modifiers & TypeModifiers.Class) != 0) // leave out class modifier if it is a record, as it is optional
             {
                 if ((modifiers & TypeModifiers.Struct) != 0)
                     throw new ArgumentException(

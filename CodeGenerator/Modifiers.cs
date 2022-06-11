@@ -91,7 +91,19 @@ namespace engenious.Content.CodeGenerator
         /// <summary>
         ///     The struct modifier which marks the type as a struct.
         /// </summary>
-        Struct = 512
+        Struct = 512,
+        /// <summary>
+        ///     The record modifier which marks the type as a record type.
+        /// </summary>
+        Record = 1024,
+        /// <summary>
+        ///     The record and class modifier which marks the type as a record class type.
+        /// </summary>
+        RecordClass = Class | Record,
+        /// <summary>
+        ///     The record and struct modifier which marks the type as a record struct type.
+        /// </summary>
+        RecordStruct = Struct | Record
     }
 
     /// <summary>

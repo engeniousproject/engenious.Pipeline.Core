@@ -55,6 +55,14 @@ namespace engenious.Content.CodeGenerator
         ///     A <see cref="TypeReference"/> to <see cref="bool"/>.
         /// </summary>
         public static readonly TypeReference Boolean = new(null, "bool");
+        /// <summary>
+        ///     A <see cref="TypeReference"/> to <see cref="float"/>.
+        /// </summary>
+        public static readonly TypeReference Single = new(null, "float");
+        /// <summary>
+        ///     A <see cref="TypeReference"/> to <see cref="double"/>.
+        /// </summary>
+        public static readonly TypeReference Double = new(null, "double");
     }
 
 
@@ -169,6 +177,7 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Namespace">The namespace of the type.</param>
     /// <param name="Modifiers">The <see cref="TypeModifiers"/> for this type.</param>
     /// <param name="Name">The name of this type.</param>
+    /// <param name="Comment">The comment text above the class definition.</param>
     [Nooson]
     public partial record TypeDefinition
         (string Namespace, TypeModifiers Modifiers, string Name, string? Comment = null) : TypeReference(Namespace,
@@ -236,6 +245,23 @@ namespace engenious.Content.CodeGenerator
             return p;
         }
 
+        /// <summary>
+        ///     Create an auto property implementing a simple getter and no setter method.
+        /// </summary>
+        /// <param name="modifiers">The parent <see cref="MethodModifiers"/> to use for the property.</param>
+        /// <param name="type">The type of the property and field.</param>
+        /// <param name="name">The name of the property to create.</param>
+        /// <param name="comment">The comment for the property method.</param>
+        /// <param name="getterModifiers">The <see cref="MethodModifiers"/> for the getter method.</param>
+        /// <returns>The created auto property.</returns>
+        public PropertyDefinition AddAutoGetterProperty(MethodModifiers modifiers, TypeReference type, string name, string? comment = null,
+            MethodModifiers getterModifiers = MethodModifiers.None)
+        {
+            var p = new PropertyDefinition(modifiers, type, name, new SimplePropertyGetter(),
+                null, getterModifiers, MethodModifiers.None, Comment: comment);
+            Properties.Add(p);
+            return p;
+        }
         /// <summary>
         ///     Creates a new empty property and a corresponding private field.
         /// </summary>
@@ -307,6 +333,7 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Type">The type of the parameter.</param>
     /// <param name="Name">The name of the parameter.</param>
+    /// <param name="Comment">The comment text for the parameter definition.</param>
     [Nooson]
     public partial record ParameterDefinition(TypeReference Type, string Name, string? Comment = null)
         : CodeDefinition, IComment
@@ -368,6 +395,7 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Parameters">The parameters of the constructor.</param>
     /// <param name="MethodBody">The body implementation of the constructor.</param>
     /// <param name="BaseCalls">The base constructor call initializers.</param>
+    /// <param name="Comment">The comment text above the constructor definition.</param>
     [Nooson]
     public partial record ConstructorDefinition(TypeReference ParentType, MethodModifiers Modifiers,
         ParameterDefinition[] Parameters, MethodBodyDefinition MethodBody, string? Comment = null,
@@ -422,6 +450,7 @@ namespace engenious.Content.CodeGenerator
     /// </summary>
     /// <param name="Signature">The signature of the method.</param>
     /// <param name="MethodBody">The method body.</param>
+    /// <param name="Comment">The comment text above the method definition.</param>
     [Nooson]
     public partial record ImplementedMethodDefinition
         (SignatureDefinition Signature, MethodBodyDefinition? MethodBody, string? Comment = null) : MethodDefinition, IComment
@@ -484,6 +513,7 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Modifiers">The <see cref="GenericModifiers"/> for the field.</param>
     /// <param name="Type">The type of the field.</param>
     /// <param name="Name">The name of the field.</param>
+    /// <param name="Comment">The comment text above the field definition.</param>
     [Nooson]
     public partial record FieldDefinition(GenericModifiers Modifiers, TypeReference Type, string Name, string? Comment = null)
         : ICode, IComment
@@ -604,6 +634,7 @@ namespace engenious.Content.CodeGenerator
     /// <param name="SetterModifiers">The setter specific <see cref="MethodModifiers"/>.</param>
     /// <param name="IndexerType">The type for the property indexer;<c>null</c> for properties with no indexer.</param>
     /// <param name="IndexerName">The name for the property indexer;<c>null</c> for properties with no indexer.</param>
+    /// <param name="Comment">The comment text above the property definition.</param>
     [Nooson]
     public partial record PropertyDefinition(MethodModifiers Modifiers, TypeReference Type, string Name,
         [property: NoosonDynamicType(typeof(SimplePropertyGetter), typeof(SimplePropertySetter), typeof(ImplementedPropertyMethodDefinition))] 

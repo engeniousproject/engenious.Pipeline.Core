@@ -47,6 +47,11 @@ namespace engenious.Content
             InitializeCache();
         }
 
+        /// <summary>
+        ///     Tries to resolve a pipeline type using a full type name.
+        /// </summary>
+        /// <param name="fullName">The full type name to try to resolve.</param>
+        /// <returns>The resolved pipeline type;<c>null</c> if no type could be resolved.</returns>
         public static Type? ResolveType(string fullName)
         {
             return ResolvableTypes.TryGetValue(fullName, out var res) ? res : null;
