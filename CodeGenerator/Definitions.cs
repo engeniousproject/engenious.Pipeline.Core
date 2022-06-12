@@ -234,13 +234,15 @@ namespace engenious.Content.CodeGenerator
         /// <param name="comment">The comment for the property method.</param>
         /// <param name="getterModifiers">The <see cref="MethodModifiers"/> for the getter method.</param>
         /// <param name="setterModifiers">The <see cref="MethodModifiers"/> for the setter method.</param>
+        /// <param name="initialValue">The value to initialize the property with.</param>
         /// <returns>The created auto property.</returns>
         public PropertyDefinition AddAutoProperty(MethodModifiers modifiers, TypeReference type, string name, string? comment = null,
             MethodModifiers getterModifiers = MethodModifiers.None,
-            MethodModifiers setterModifiers = MethodModifiers.None)
+            MethodModifiers setterModifiers = MethodModifiers.None,
+            CodeExpressionDefinition? initialValue = null)
         {
             var p = new PropertyDefinition(modifiers, type, name, new SimplePropertyGetter(),
-                new SimplePropertySetter(), getterModifiers, setterModifiers, Comment: comment);
+                new SimplePropertySetter(), getterModifiers, setterModifiers, Comment: comment, InitialValue: initialValue);
             Properties.Add(p);
             return p;
         }
@@ -514,8 +516,10 @@ namespace engenious.Content.CodeGenerator
     /// <param name="Type">The type of the field.</param>
     /// <param name="Name">The name of the field.</param>
     /// <param name="Comment">The comment text above the field definition.</param>
+    /// <param name="InitialValue">The value to initialize the property with.</param>
     [Nooson]
-    public partial record FieldDefinition(GenericModifiers Modifiers, TypeReference Type, string Name, string? Comment = null)
+    public partial record FieldDefinition(GenericModifiers Modifiers, TypeReference Type, string Name,
+            string? Comment = null, CodeExpressionDefinition? InitialValue = null)
         : ICode, IComment
     {
         /// <inheritdoc />
@@ -527,6 +531,11 @@ namespace engenious.Content.CodeGenerator
             Type.WriteReference(builder);
             builder.Append(" ");
             builder.Append(Name);
+            if (InitialValue is not null)
+            {
+                builder.Append(" = ");
+                InitialValue.WriteTo(builder);
+            }
             builder.AppendLine(";");
         }
     }
@@ -635,6 +644,7 @@ namespace engenious.Content.CodeGenerator
     /// <param name="IndexerType">The type for the property indexer;<c>null</c> for properties with no indexer.</param>
     /// <param name="IndexerName">The name for the property indexer;<c>null</c> for properties with no indexer.</param>
     /// <param name="Comment">The comment text above the property definition.</param>
+    /// <param name="InitialValue">The value to initialize the property with.</param>
     [Nooson]
     public partial record PropertyDefinition(MethodModifiers Modifiers, TypeReference Type, string Name,
         [property: NoosonDynamicType(typeof(SimplePropertyGetter), typeof(SimplePropertySetter), typeof(ImplementedPropertyMethodDefinition))] 
@@ -643,7 +653,7 @@ namespace engenious.Content.CodeGenerator
         PropertyMethodDefinition? SetMethod,
         MethodModifiers GetterModifiers = MethodModifiers.None,
         MethodModifiers SetterModifiers = MethodModifiers.None, TypeReference? IndexerType = null,
-        string? IndexerName = null, string? Comment = null) : CodeDefinition, IComment
+        string? IndexerName = null, string? Comment = null, CodeExpressionDefinition? InitialValue = null) : CodeDefinition, IComment
     {
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
@@ -672,7 +682,7 @@ namespace engenious.Content.CodeGenerator
                 builder.Append(" ");
                 builder.WriteModifiers(SetterModifiers);
                 simpleSetter.WriteTo(builder);
-                builder.AppendLine(" }");
+                builder.Append(" }");
             }
             else
             {
@@ -696,8 +706,16 @@ namespace engenious.Content.CodeGenerator
                 }
 
                 builder.Indentation--;
-                builder.AppendLine("}");
+                builder.Append("}");
             }
+
+            if (InitialValue is not null)
+            {
+                builder.Append(" = ");
+                InitialValue?.WriteTo(builder);
+                builder.Append(";");
+            }
+            builder.AppendLine();
         }
     }
 }
