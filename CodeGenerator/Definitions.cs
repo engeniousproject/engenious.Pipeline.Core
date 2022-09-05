@@ -277,7 +277,7 @@ namespace engenious.Content.CodeGenerator
             CodeExpressionDefinition? initialValue = null)
         {
             var typeName = type.Name.EndsWith("?") ? type.Name : type.Name + "?";
-            var f = new FieldDefinition(GenericModifiers.Private, new TypeReference(type.Namespace, typeName), $"_{name}");
+            var f = new FieldDefinition(GenericModifiers.Private, new TypeReference(type.Namespace, typeName), $"_{name}", InitialValue: initialValue);
             var getter = new ImplementedPropertyMethodDefinition(
                 new MethodBodyDefinition(new BlockExpressionDefinition(new MultilineExpressionDefinition(new CodeExpressionDefinition[]
                                                                            {
@@ -290,7 +290,7 @@ namespace engenious.Content.CodeGenerator
                                                                                $"System.Diagnostics.Debug.Assert(value is not null, \"{name} may not be null!\");",
                                                                                $"{f.Name} = value;"
                                                                            }))), true);
-            var p = new PropertyDefinition(modifiers, type, name, getter, setter, getterModifiers, setterModifiers);
+            var p = new PropertyDefinition(modifiers, type, name, getter, setter, getterModifiers, setterModifiers, Comment: comment);
             Fields.Add(f);
             Properties.Add(p);
             
