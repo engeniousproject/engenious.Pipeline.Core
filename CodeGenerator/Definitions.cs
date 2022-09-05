@@ -103,6 +103,13 @@ namespace engenious.Content.CodeGenerator
             return sb.ToString();
         }
 
+        public TypeReference NonNullable()
+        {
+            if (Name.EndsWith("?"))
+                return new TypeReference(Namespace, Name.TrimEnd('?'));
+            return this;
+        }
+
         /// <inheritdoc />
         public override void WriteTo(ICodeBuilder builder)
         {
@@ -155,6 +162,10 @@ namespace engenious.Content.CodeGenerator
         /// <summary>
         ///     Gets the used namespace imports for this file.
         /// </summary>
+        public List<string> FileAnnotations { get; init; } = new();
+        /// <summary>
+        ///     Gets the used namespace imports for this file.
+        /// </summary>
         public List<string> Usings { get; init; } = new();
         /// <summary>
         ///     Gets the types defined in this file.
@@ -164,6 +175,7 @@ namespace engenious.Content.CodeGenerator
         /// <inheritdoc />
         public void WriteTo(ICodeBuilder builder)
         {
+            foreach (var u in FileAnnotations) builder.AppendLine(u);
             foreach (var u in Usings) builder.AppendLine("using {u};");
 
             builder.AppendLine();
@@ -244,6 +256,44 @@ namespace engenious.Content.CodeGenerator
             var p = new PropertyDefinition(modifiers, type, name, new SimplePropertyGetter(),
                 new SimplePropertySetter(), getterModifiers, setterModifiers, Comment: comment, InitialValue: initialValue);
             Properties.Add(p);
+            return p;
+        }
+
+        /// <summary>
+        ///     Create an auto property implementing a simple getter and setter method.
+        /// </summary>
+        /// <param name="modifiers">The parent <see cref="MethodModifiers"/> to use for the property.</param>
+        /// <param name="type">The type of the property and field.</param>
+        /// <param name="name">The name of the property to create.</param>
+        /// <param name="comment">The comment for the property method.</param>
+        /// <param name="getterModifiers">The <see cref="MethodModifiers"/> for the getter method.</param>
+        /// <param name="setterModifiers">The <see cref="MethodModifiers"/> for the setter method.</param>
+        /// <param name="initialValue">The value to initialize the property with.</param>
+        /// <returns>The created auto property.</returns>
+        public PropertyDefinition AddLateInitProperty(MethodModifiers modifiers, TypeReference type, string name,
+            string? comment = null,
+            MethodModifiers getterModifiers = MethodModifiers.None,
+            MethodModifiers setterModifiers = MethodModifiers.None,
+            CodeExpressionDefinition? initialValue = null)
+        {
+            var typeName = type.Name.EndsWith("?") ? type.Name : type.Name + "?";
+            var f = new FieldDefinition(GenericModifiers.Private, new TypeReference(type.Namespace, typeName), $"_{name}");
+            var getter = new ImplementedPropertyMethodDefinition(
+                new MethodBodyDefinition(new BlockExpressionDefinition(new MultilineExpressionDefinition(new CodeExpressionDefinition[]
+                                                                           {
+                                                                               $"System.Diagnostics.Debug.Assert({f.Name} is not null, \"{name} was not initialized!\");",
+                                                                               $"return {f.Name};"
+                                                                           }))), false);
+            var setter = new ImplementedPropertyMethodDefinition(
+                new MethodBodyDefinition(new BlockExpressionDefinition(new MultilineExpressionDefinition(new CodeExpressionDefinition[]
+                                                                           {
+                                                                               $"System.Diagnostics.Debug.Assert(value is not null, \"{name} may not be null!\");",
+                                                                               $"{f.Name} = value;"
+                                                                           }))), true);
+            var p = new PropertyDefinition(modifiers, type, name, getter, setter, getterModifiers, setterModifiers);
+            Fields.Add(f);
+            Properties.Add(p);
+            
             return p;
         }
 
