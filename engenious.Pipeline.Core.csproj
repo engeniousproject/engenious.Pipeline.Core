@@ -22,10 +22,10 @@
         <Compile Remove="GeneratedFiles\**" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="LitGit" Version="0.2.0.55-alpha" PrivateAssets="all" />
+        <PackageReference Include="LitGit" Version="0.2.0.56-alpha" PrivateAssets="all" />
         <PackageReference Include="LiCo" Version="0.1.11.13-alpha" PrivateAssets="all" />
-        <PackageReference Include="NonSucking.Framework.Serialization" Version="0.1.0.74-alpha" OutputItemType="Analyzer" ReferenceOutputAssembly="true" PrivateAssets="all" />
-        <PackageReference Include="System.Memory" Version="4.5.4" />
+        <PackageReference Include="NonSucking.Framework.Serialization" Version="0.1.0.76-alpha" OutputItemType="Analyzer" ReferenceOutputAssembly="true" PrivateAssets="all" />
+        <PackageReference Include="System.Memory" Version="4.5.5" />
     </ItemGroup>
 
 </Project>

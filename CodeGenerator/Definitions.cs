@@ -103,6 +103,10 @@ namespace engenious.Content.CodeGenerator
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Returns a non nullable <see cref="TypeReference"/> for this type.
+        /// </summary>
+        /// <returns> The non nullable <see cref="TypeReference"/> for this type.</returns>
         public TypeReference NonNullable()
         {
             if (Name.EndsWith("?"))
@@ -176,7 +180,7 @@ namespace engenious.Content.CodeGenerator
         public void WriteTo(ICodeBuilder builder)
         {
             foreach (var u in FileAnnotations) builder.AppendLine(u);
-            foreach (var u in Usings) builder.AppendLine("using {u};");
+            foreach (var u in Usings) builder.AppendLine($"using {u};");
 
             builder.AppendLine();
             foreach (var n in Types) n.Value.WriteTo(builder);
@@ -195,7 +199,7 @@ namespace engenious.Content.CodeGenerator
         (string Namespace, TypeModifiers Modifiers, string Name, string? Comment = null) : TypeReference(Namespace,
             Name), IComment
     {
-        private List<TypeReference> _baseTypes;
+        private List<TypeReference>? _baseTypes;
     
         /// <summary>
         /// Gets the implemented and inherited base types.
