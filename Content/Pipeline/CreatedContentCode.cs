@@ -63,12 +63,6 @@ namespace engenious.Content.Pipeline
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
                 var br = new BinaryReader(fs);
                 return CreatedContentCode.Deserialize(br);
-                // var formatter = new BinaryFormatter();
-                // var contentCode = (CreatedContentCode)formatter.Deserialize(fs);
-                // contentCode.BuildId = buildId;
-                // return contentCode;
-
-
             }
             catch
             {
