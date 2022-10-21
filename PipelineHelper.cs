@@ -176,12 +176,20 @@ namespace engenious.Content
                 return;
             _resolveableTypesCollected = true;
             ResolvableTypes.Clear();
-            foreach(var assembly in Assemblies)
-            foreach (var type in assembly.GetTypes())
+            foreach (var assembly in Assemblies)
             {
-                if (type.FullName == null)
-                    continue;
-                ResolvableTypes[type.FullName] = type;
+                try
+                {
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        if (type.FullName == null)
+                            continue;
+                        ResolvableTypes[type.FullName] = type;
+                    }
+                }
+                catch (ReflectionTypeLoadException)
+                {
+                }
             }
         }
 
@@ -193,14 +201,28 @@ namespace engenious.Content
             Processors.Clear();
             ProcessorsByType.Clear();
             foreach (var assembly in Assemblies)
-            foreach (var type in assembly.GetTypes())
-                if (typeof(IContentProcessor).IsAssignableFrom(type) && !(type.IsAbstract || type.IsInterface))
+                try
                 {
-                    if (!Processors.ContainsKey(type.Name))
-                        Processors.Add(type.Name, type);
+                    foreach (var type in assembly.GetTypes())
+                    {
+                        try
+                        {
+                            if (typeof(IContentProcessor).IsAssignableFrom(type) && !(type.IsAbstract || type.IsInterface))
+                            {
+                                if (!Processors.ContainsKey(type.Name))
+                                    Processors.Add(type.Name, type);
 
-                    var baseType = GetProcessorInputType(type);
-                    ProcessorsByType.Add(new KeyValuePair<Type, string>(baseType, type.Name));
+                                var baseType = GetProcessorInputType(type);
+                                ProcessorsByType.Add(new KeyValuePair<Type, string>(baseType, type.Name));
+                            }
+                        }
+                        catch (FileNotFoundException)
+                        {
+                        }
+                    }
+                }
+                catch (ReflectionTypeLoadException)
+                {
                 }
         }
 
@@ -334,17 +356,36 @@ namespace engenious.Content
         private static IEnumerable<Type> EnumerateImporters()
         {
             foreach (var assembly in Assemblies)
-            foreach (var type in assembly.GetTypes())
             {
-                if (!typeof(IContentImporter).IsAssignableFrom(type) || type.IsValueType || type.IsInterface ||
-                    type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(
-                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                        null, Type.EmptyTypes, null) == null)
+                Type[] types;
+                try
+                {
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException)
+                {
                     continue;
+                }
+                foreach (var type in types)
+                {
+                    try
+                    {
+                        if (!typeof(IContentImporter).IsAssignableFrom(type) || type.IsValueType || type.IsInterface ||
+                            type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(
+                                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                                null, Type.EmptyTypes, null) == null)
+                            continue;
 
-                var importerAttribute = (ContentImporterAttribute?)Attribute
-                    .GetCustomAttributes(type, typeof(ContentImporterAttribute)).FirstOrDefault();
-                if (importerAttribute != null) yield return type;
+                        var importerAttribute = (ContentImporterAttribute?)Attribute
+                            .GetCustomAttributes(type, typeof(ContentImporterAttribute)).FirstOrDefault();
+                        if (importerAttribute is null) continue;
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        continue;
+                    }
+                    yield return type;
+                }
             }
         }
     }

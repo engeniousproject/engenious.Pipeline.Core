@@ -21,7 +21,7 @@ namespace engenious.Content.Models
         /// <summary>
         ///     A value indicating whether changed events should be suppressed.
         /// </summary>
-        protected bool SupressChangedEvent = false;
+        protected bool SuppressChangedEvent = false;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="ContentItem"/> class.
@@ -143,7 +143,7 @@ namespace engenious.Content.Models
         /// <param name="args">The arguments for the events.</param>
         protected virtual void OnPropertyChanged(object sender, PropertyValueChangedEventArgs args)
         {
-            if (SupressChangedEvent) return;
+            if (SuppressChangedEvent) return;
             PropertyValueChanged?.Invoke(sender, args);
             _notifyPropertyChanged?.Invoke(sender, new PropertyChangedEventArgs(args.PropertyName));
         }
@@ -159,7 +159,7 @@ namespace engenious.Content.Models
         protected virtual void OnPropertyChanged(object sender, object? oldValue, object? newValue,
             [CallerMemberName] string? propertyName = null)
         {
-            if (SupressChangedEvent) return;
+            if (SuppressChangedEvent) return;
             OnPropertyChanged(sender, new PropertyValueChangedEventArgs(propertyName!, oldValue, newValue));
         }
 
@@ -173,7 +173,7 @@ namespace engenious.Content.Models
         protected virtual void OnPropertyChanged(object? oldValue, object? newValue,
             [CallerMemberName] string? propertyName = null)
         {
-            if (SupressChangedEvent) return;
+            if (SuppressChangedEvent) return;
             OnPropertyChanged(this, oldValue, newValue, propertyName);
         }
 
@@ -184,7 +184,7 @@ namespace engenious.Content.Models
         /// <param name="args">The arguments for the event.</param>
         protected virtual void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
-            if (SupressChangedEvent) return;
+            if (SuppressChangedEvent) return;
             CollectionChanged?.Invoke(sender is ContentItem ? sender : this, args);
         }
 

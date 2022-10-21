@@ -145,7 +145,7 @@ namespace engenious.Content.Models
         /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
-            SupressChangedEvent = true;
+            SuppressChangedEvent = true;
             Name = element.Element("Name")?.Value ?? "Content";
             _configuration = element.Element("Configuration")?.Value ?? "Release";
             _outputDirectory = element.Element("OutputDir")?.Value ?? "bin/{Configuration}";
@@ -164,7 +164,7 @@ namespace engenious.Content.Models
                     Content.Add(new ContentFile(string.Empty, this).Deserialize(subElement));
                 else if (subElement.Name == "ContentFolder")
                     Content.Add(new ContentFolder(string.Empty, this).Deserialize(subElement));
-            SupressChangedEvent = false;
+            SuppressChangedEvent = false;
 
             return this;
         }

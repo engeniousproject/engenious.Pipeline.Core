@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Xml.Linq;
@@ -89,6 +90,15 @@ namespace engenious.Content.Models
             }
         }
 
+        /// <summary>
+        ///     Gets the dependency imported cached object used for importing.
+        /// </summary>
+        public object? DependencyImport { get; private set; }
+
+        /// <summary>
+        ///     Gets a list of file paths this file is dependant on.
+        /// </summary>
+        public HashSet<string> Dependencies { get; } = new();
 
         /// <summary>
         ///     Gets or sets the <see cref="Processor"/> specific settings.
@@ -109,7 +119,7 @@ namespace engenious.Content.Models
         /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
-            SupressChangedEvent = true;
+            SuppressChangedEvent = true;
             Name = element.Element("Name")?.Value ??
                    throw new ArgumentException($"{nameof(element)} has no \"Name\" tag.");
 
@@ -134,7 +144,10 @@ namespace engenious.Content.Models
 
             if (Settings != null && element.Element("Settings") != null) Settings.Read(element.Element("Settings"));
 
-            SupressChangedEvent = false;
+            var importerContext = new ContentImporterContext(Guid.Empty, null, Project.FilePath);
+            DependencyImport = Importer?.DependencyImportBase(FilePath, importerContext, Dependencies);
+
+            SuppressChangedEvent = false;
             return this;
         }
 

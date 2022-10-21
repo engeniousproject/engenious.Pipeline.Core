@@ -47,7 +47,7 @@ namespace engenious.Content.Models
         /// <inheritdoc />
         public override ContentItem Deserialize(XElement element)
         {
-            SupressChangedEvent = true;
+            SuppressChangedEvent = true;
             Name = element.Element("Name")?.Value ??
                    throw new ArgumentException($"{nameof(element)} has no \"Name\" tag.");
 
@@ -63,7 +63,7 @@ namespace engenious.Content.Models
                     _content.Add(new ContentFile(string.Empty, this).Deserialize(subElement));
                 else if (subElement.Name == "ContentFolder")
                     _content.Add(new ContentFolder(string.Empty, this).Deserialize(subElement));
-            SupressChangedEvent = false;
+            SuppressChangedEvent = false;
 
             return this;
         }
