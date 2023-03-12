@@ -13,6 +13,9 @@
 
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
     </PropertyGroup>
     <ItemGroup>
         <None Include="LICENSE" Pack="true" PackagePath="" />
@@ -22,6 +25,7 @@
         <Compile Remove="GeneratedFiles\**" />
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="LitGit" Version="0.2.0.58-alpha" PrivateAssets="all" />
         <PackageReference Include="LiCo" Version="0.2.0.3-alpha" PrivateAssets="all" />
         <PackageReference Include="NonSucking.Framework.Serialization" Version="0.1.0.80-alpha" OutputItemType="Analyzer" ReferenceOutputAssembly="true" PrivateAssets="all" />
